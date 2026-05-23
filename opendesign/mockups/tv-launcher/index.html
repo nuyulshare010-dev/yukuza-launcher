@@ -69,7 +69,7 @@
 
         const AppCard = ({ app, isFocused, onClick }) => (
             <div
-                className={`flex flex-col items-center gap-4 transition-all ${isFocused ? 'focused' : ''}`}
+                className={`relative flex flex-col items-center gap-4 transition-all ${isFocused ? 'focused' : ''}`}
                 onClick={onClick}
                 style={{ cursor: 'pointer' }}
             >
@@ -201,7 +201,7 @@
                         )}
 
                         {selectedTab === 'Apps' && (
-                            <div className="grid grid-cols-6 gap-x-8 gap-y-12 px-2 pb-12 overflow-y-auto">
+                            <div className="grid grid-cols-5 gap-x-12 gap-y-16 px-2 pb-12 overflow-y-auto justify-items-center">
                                 {APPS.map((app, i) => (
                                     <AppCard 
                                         key={app.id} 
