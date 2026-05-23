@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yukuza Android TV Launcher Prototype</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../../design-systems/yukuza/tokens/colors_and_type.css">
+    <style>
+        body {
+            background-color: var(--bg-app);
+            color: var(--fg-primary);
+            font-family: var(--font-family);
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .tv-safe-area {
+            padding: var(--spacing-xl);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .focused {
+            outline: 3px solid var(--fg-accent);
+            outline-offset: 4px;
+            transform: scale(1.05);
+            z-index: 10;
+        }
+
+        .transition-all {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        const TABS = ['Search', 'Home', 'Apps'];
+        
+        const APPS = [
+            { id: 'netflix', name: 'Netflix', color: '#E50914' },
+            { id: 'youtube', name: 'YouTube', color: '#FF0000' },
+            { id: 'prime', name: 'Prime Video', color: '#00A8E1' },
+            { id: 'disney', name: 'Disney+', color: '#113CCF' },
+            { id: 'hulu', name: 'Hulu', color: '#1CE783' },
+            { id: 'hbo', name: 'Max', color: '#002BE7' },
+            { id: 'settings', name: 'Settings', color: '#555555' },
+            { id: 'plex', name: 'Plex', color: '#E5A00D' },
+            { id: 'spotify', name: 'Spotify', color: '#1DB954' },
+            { id: 'twitch', name: 'Twitch', color: '#9146FF' }
+        ];
+
+        const AppCard = ({ app, isFocused, onClick }) => (
+            <div
+                className={`flex flex-col items-center gap-4 transition-all ${isFocused ? 'focused' : ''}`}
+                onClick={onClick}
+                style={{ cursor: 'pointer' }}
+            >
+                <div
+                    className="w-40 h-40 rounded-[32px] flex items-center justify-center shadow-lg"
+                    style={{ backgroundColor: app.color }}
+                >
+                    <span className="text-5xl font-bold">{app.name[0]}</span>
+                </div>
+                <span className={`text-xl font-medium ${isFocused ? 'text-white' : 'text-gray-400'}`}>
+                    {app.name}
+                </span>
+            </div>
+        );
+        const NavTab = ({ name, isSelected, isFocused, onSelect }) => (
+            <div 
+                className={`px-6 py-2 rounded-full text-xl transition-all cursor-pointer
+                    ${isSelected ? 'bg-white/10 text-white font-bold' : 'text-gray-400'}
+                    ${isFocused ? 'bg-white/20 scale-110 text-white' : ''}
+                `}
+                onClick={() => onSelect(name)}
+            >
+                {name}
+            </div>
+        );
+
+        const Launcher = () => {
+            const [selectedTab, setSelectedTab] = useState('Home');
+            const [focusCoord, setFocusCoord] = useState({ x: 1, y: 0 }); // y:0 nav, y:1 content
+            const [appFocusIndex, setAppFocusIndex] = useState(0);
+            
+            // D-pad Navigation Logic
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.key === 'ArrowRight') {
+                        if (focusCoord.y === 0) {
+                            setFocusCoord(prev => ({ ...prev, x: Math.min(prev.x + 1, TABS.length - 1) }));
+                        } else {
+                            setAppFocusIndex(prev => Math.min(prev + 1, APPS.length - 1));
+                        }
+                    } else if (e.key === 'ArrowLeft') {
+                        if (focusCoord.y === 0) {
+                            setFocusCoord(prev => ({ ...prev, x: Math.max(prev.x - 1, 0) }));
+                        } else {
+                            setAppFocusIndex(prev => Math.max(prev - 1, 0));
+                        }
+                    } else if (e.key === 'ArrowDown') {
+                        if (focusCoord.y === 0) {
+                            setFocusCoord(prev => ({ ...prev, y: 1 }));
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        if (focusCoord.y === 1) {
+                            setFocusCoord(prev => ({ ...prev, y: 0 }));
+                        }
+                    } else if (e.key === 'Enter') {
+                        if (focusCoord.y === 0) {
+                            setSelectedTab(TABS[focusCoord.x]);
+                        } else {
+                            alert(`Launching ${APPS[appFocusIndex].name}`);
+                        }
+                    }
+                };
+
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [focusCoord, appFocusIndex]);
+
+            // Sync selectedTab with focusCoord.x if nav bar is focused
+            useEffect(() => {
+                if (focusCoord.y === 0) {
+                    // In a real TV app, we might wait for Enter, 
+                    // but for this prototype let's auto-switch tabs
+                    setSelectedTab(TABS[focusCoord.x]);
+                }
+            }, [focusCoord]);
+
+            return (
+                <div className="tv-safe-area">
+                    {/* Header with Nav and Clock */}
+                    <div className="flex justify-between items-center mb-12">
+                        <div className="flex gap-4">
+                            {TABS.map((tab, i) => (
+                                <NavTab 
+                                    key={tab} 
+                                    name={tab} 
+                                    isSelected={selectedTab === tab}
+                                    isFocused={focusCoord.y === 0 && focusCoord.x === i}
+                                    onSelect={(name) => {
+                                        setSelectedTab(name);
+                                        setFocusCoord({ x: i, y: 0 });
+                                    }}
+                                />
+                            ))}
+                        </div>
+                        <div className="text-3xl font-light text-gray-300">
+                            {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                    </div>
+
+                    {/* Content Area */}
+                    <div className="flex-1 overflow-hidden">
+                        {selectedTab === 'Home' && (
+                            <div className="flex flex-col gap-12">
+                                {/* Hero Section */}
+                                <div className="w-full h-80 rounded-[40px] bg-gradient-to-br from-blue-900 to-indigo-950 p-12 flex flex-col justify-end gap-2 border border-white/10">
+                                    <span className="text-blue-400 font-bold tracking-widest text-sm uppercase">Featured</span>
+                                    <h1 className="text-5xl font-black">Yukuza Prototype</h1>
+                                    <p className="text-xl text-gray-400 max-w-xl">A clean, focused Android TV experience designed for speed and simplicity.</p>
+                                </div>
+
+                                {/* App Row */}
+                                <div className="flex flex-col gap-6">
+                                    <h2 className="text-2xl font-bold px-2">Your Apps</h2>
+                                    <div className="flex gap-8 overflow-x-auto pb-8 px-2">
+                                        {APPS.slice(0, 6).map((app, i) => (
+                                            <AppCard 
+                                                key={app.id} 
+                                                app={app} 
+                                                isFocused={focusCoord.y === 1 && appFocusIndex === i}
+                                                onClick={() => {
+                                                    setAppFocusIndex(i);
+                                                    setFocusCoord(prev => ({ ...prev, y: 1 }));
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {selectedTab === 'Apps' && (
+                            <div className="grid grid-cols-6 gap-x-8 gap-y-12 px-2 pb-12 overflow-y-auto">
+                                {APPS.map((app, i) => (
+                                    <AppCard 
+                                        key={app.id} 
+                                        app={app} 
+                                        isFocused={focusCoord.y === 1 && appFocusIndex === i}
+                                        onClick={() => {
+                                            setAppFocusIndex(i);
+                                            setFocusCoord(prev => ({ ...prev, y: 1 }));
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {selectedTab === 'Search' && (
+                            <div className="flex flex-col h-full px-12 py-8 gap-12">
+                                {/* Search Bar */}
+                                <div className="flex items-center gap-6 bg-white/5 border border-white/10 p-6 rounded-[32px] w-full max-w-4xl mx-auto focused">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 via-purple-500 to-pink-500 animate-pulse"></div>
+                                    <span className="text-2xl text-gray-300">Ask Gemini anything...</span>
+                                    <div className="ml-auto flex gap-2">
+                                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">🎤</div>
+                                    </div>
+                                </div>
+
+                                {/* AI Suggestions */}
+                                <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto">
+                                    <h3 className="text-blue-400 font-bold uppercase tracking-wider text-sm">Suggested for you</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {[
+                                            "What should I watch tonight?",
+                                            "Find 4K sci-fi movies",
+                                            "How's the weather tomorrow?",
+                                            "Play some lo-fi music"
+                                        ].map((q, i) => (
+                                            <div key={i} className="bg-white/5 border border-white/5 p-6 rounded-2xl hover:bg-white/10 cursor-pointer transition-all">
+                                                <span className="text-lg">{q}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Response Area (Empty state) */}
+                                <div className="flex-1 flex flex-col items-center justify-center gap-4 opacity-30">
+                                    <div className="text-4xl">✨</div>
+                                    <p className="text-lg">Gemini can help you find content, answer questions, and control your TV.</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer / Context Info */}
+                    <div className="mt-auto pt-8 flex gap-8 text-gray-500 text-sm">
+                        <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-[10px]">OK</span>
+                            <span>Select</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-[10px]">BACK</span>
+                            <span>Back</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<Launcher />);
+    </script>
+</body>
+</html>
