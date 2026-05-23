@@ -22,7 +22,7 @@
         }
         
         .tv-safe-area {
-            padding: var(--spacing-xl);
+            padding: var(--spacing-xl) 96px;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -183,7 +183,7 @@
                                 {/* App Row */}
                                 <div className="flex flex-col gap-6">
                                     <h2 className="text-2xl font-bold px-2">Your Apps</h2>
-                                    <div className="flex gap-8 overflow-x-auto pb-8 px-2">
+                                    <div className="flex gap-12 overflow-x-auto pb-8 px-2">
                                         {APPS.slice(0, 6).map((app, i) => (
                                             <AppCard 
                                                 key={app.id} 
