@@ -3,6 +3,10 @@ package com.yukuza.launcher.ui.components
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.provider.Settings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -28,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.Modifier
@@ -37,7 +42,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
-
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -63,6 +69,21 @@ fun AppIcon(
     isHidden: Boolean = false,
 ) {
     val context = LocalContext.current
+    val hapticFeedback = LocalHapticFeedback.current
+    val vibrator = remember { context.getSystemService(Vibrator::class.java) }
+    
+    var wasFocused by remember { mutableStateOf(false) }
+    
+    // Trigger haptic feedback on focus gain
+    if (isFocused && !wasFocused) {
+        hapticFeedback.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator?.vibrate(VibrationEffect.createOneShot(15, VibrationEffect.DEFAULT_AMPLITUDE))
+        }
+        wasFocused = true
+    } else if (!isFocused) {
+        wasFocused = false
+    }
 
     val scale by animateFloatAsState(
         targetValue = if (isFocused) 1.15f else 1f,
@@ -98,8 +119,15 @@ fun AppIcon(
             .onFocusChanged { if (it.isFocused) onFocus() }
             .focusable()
             .combinedClickable(
-                onClick = { onLaunch(); launchApp(context, app.packageName) },
-                onLongClick = onLongPress,
+                onClick = { 
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLaunch()
+                    launchApp(context, app.packageName) 
+                },
+                onLongClick = {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onLongPress()
+                },
             )
             .semantics { contentDescription = context.getString(com.yukuza.launcher.R.string.app_icon_content_description, app.label) },
     ) {
