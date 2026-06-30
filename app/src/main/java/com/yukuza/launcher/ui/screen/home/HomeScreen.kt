@@ -3,10 +3,16 @@ package com.yukuza.launcher.ui.screen.home
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -22,9 +28,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.yukuza.launcher.domain.model.AppInfo
 import com.yukuza.launcher.ui.components.AppRow
+import com.yukuza.launcher.ui.components.AssistantButton
 import com.yukuza.launcher.ui.components.aurora.AuroraBackground
 import com.yukuza.launcher.ui.components.glass.GlassCard
+import com.yukuza.launcher.ui.components.widgets.AqiWidget
 import com.yukuza.launcher.ui.components.widgets.ClockWidget
+import com.yukuza.launcher.ui.components.widgets.NetworkWidget
+import com.yukuza.launcher.ui.components.widgets.NowPlayingWidget
+import com.yukuza.launcher.ui.components.widgets.ScreenTimerWidget
+import com.yukuza.launcher.ui.components.widgets.WeatherWidget
 import com.yukuza.launcher.ui.overlay.AppContextMenuOverlay
 import com.yukuza.launcher.ui.theme.YukuzaColors
 
@@ -70,11 +82,44 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(horizontal = 40.dp),
         ) {
-            // Top bar — clock only
-            ClockWidget(
-                Modifier
-                    .align(Alignment.TopStart)
-                    .padding(top = 36.dp),
+            // Top section: Clock + Widgets row
+            Column(
+                modifier = Modifier.align(Alignment.TopStart)
+            ) {
+                ClockWidget(
+                    Modifier.padding(top = 36.dp)
+                )
+                Spacer(Modifier.height(16.dp))
+                // Widget row with weather, network, AQI, screen timer
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.padding(start = 0.dp)
+                ) {
+                    WeatherWidget(
+                        data = uiState.weatherData ?: WeatherData(),
+                        onClick = { /* TODO: Open weather details */ }
+                    )
+                    NetworkWidget(data = uiState.networkData ?: NetworkData())
+                    AqiWidget(data = uiState.aqiData ?: AqiData())
+                    ScreenTimerWidget()
+                }
+            }
+
+            // Now Playing widget - appears when media is playing
+            uiState.mediaData?.let { media ->
+                NowPlayingWidget(
+                    data = media,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 36.dp, end = 40.dp)
+                )
+            }
+
+            // Assistant button in top-right corner
+            AssistantButton(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 36.dp, end = 40.dp)
             )
 
             // Bottom: App strip with modern glass design
