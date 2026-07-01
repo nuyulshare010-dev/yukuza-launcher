@@ -2,9 +2,9 @@ name: Launcher Android Tv
 
 on:
   push:
-    branches: [ "main", "develop" ]
+    branches: [ "master", "develop" ]
   pull_request:
-    branches: [ "main", "develop" ]
+    branches: [ "master", "develop" ]
 
 jobs:
   build:
@@ -21,10 +21,9 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # 📌 Tambahan: ubah minSdkVersion menjadi 23
+      # Ubah minSdkVersion menjadi 23
       - name: Set minSdk to 23
         run: |
-          # Cari file build.gradle (asumsi Groovy DSL)
           if [ -f "app/build.gradle" ]; then
             sed -i 's/minSdkVersion .*/minSdkVersion 23/' app/build.gradle
           elif [ -f "app/build.gradle.kts" ]; then
@@ -33,7 +32,6 @@ jobs:
             echo "File build.gradle tidak ditemukan!"
             exit 1
           fi
-          # (Opsional) tampilkan isi untuk verifikasi
           cat app/build.gradle || cat app/build.gradle.kts
 
       - name: Grant execute permission for gradlew
